@@ -1,5 +1,7 @@
 # MikuMikuDayo  
 
+![_0](https://github.com/pennennennennennenem/MikuMikuDayo/assets/56704844/a3fec8ea-0893-4d73-933e-b3c5766de9c8)
+
 ## 概要
 なんかこれじゃないPMXファイル用のレンダラです  
 sdPBRなどのシェーダを作るにあたって新しいレンダリング手法を試す時には、お手本が無いと結果が正しいのかどうかわかりませんから、そのお手本を作るためのモノです  

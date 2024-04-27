@@ -16,6 +16,10 @@ sdPBRなどのシェーダを作るにあたって新しいレンダリング手
 ## 起動方法
 エクスプローラ上で`x64\release\MikuMikuDayo.exe`をダブルクリック！  
 
+- Windows11環境で作っているのでWindows10でどうなるかはわかりません
+- DLLが無くて起動しない場合は[こちら](https://learn.microsoft.com/ja-jp/cpp/windows/latest-supported-vc-redist?view=msvc-170)
+- どれをDLしたらいいのか分からない場合は多分[これ](https://aka.ms/vs/17/release/vc_redist.x64.exe)です
+
 
 ## 操作方法
 マウスやテンキーでの操作については画面に表示される通りなのでメニューについて  

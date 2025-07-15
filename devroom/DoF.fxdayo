@@ -1,0 +1,316 @@
+[YRZFX]
+{
+    "fx": {
+        "cereal_class_version": 0,
+		"category" : "postprocess",
+        "controllers": [
+			{"name": "C_off","controllerName": "(self)","item": "off","type": "float"},
+			{"name": "C_BokehPlus","controllerName": "(self)","item": "ボケて","type": "float"},
+			{"name": "C_BokehMinus","controllerName": "(self)","item": "ボケないで","type": "float"},
+			{"name": "C_Pint","controllerName": "(self)","item": "ピント","type": "float3"},
+			{"name": "C_Delay","controllerName": "(self)","item": "ピント遅延","type": "float"},
+			{"name": "C_FrontMinus","controllerName": "(self)","item": "前ボケないで","type": "float"},
+			{"name": "C_SamplesPlus","controllerName": "(self)","item": "サンプル数+","type": "float"},
+			{"name": "C_SamplesMinus","controllerName": "(self)","item": "サンプル数-","type": "float"},
+			{"name": "C_Lemon","controllerName": "(self)","item": "レモンボケ","type": "float"},
+			{"name": "C_Anamorphic","controllerName": "(self)","item": "縦長ボケ","type": "float"},
+			{"name": "C_Hex","controllerName": "(self)","item": "六角ボケ","type": "float"},
+		],
+		"textures":[
+			{ "name":"CoCMap","format":"R32_FLOAT", "view":"RTV" },
+			{ "name":"Sum", "format":"R32G32B32A32_FLOAT", "view":"UAV"},
+		],
+		"buffers":[
+			{ "name":"Computer", "elemSize":16, "type":"float4", "view":"UAV", "size":{"absolute":true,"width":1}}
+		],
+		"samplers": [
+			{ "name":"PointSamp", "filter":"POINT", "addressU":"CLAMP", "addressV":"CLAMP" },
+			{ "name":"ClampSamp", "filter":"LINEAR", "addressU":"CLAMP", "addressV":"CLAMP" }
+		],
+        "passes": [
+			{ "name":"Computer", "type":"compute", "computeShader":"CS", "UAV":[{"name":"Computer"}],
+				"outputSize":{"absolute":true, "width":1, "dimension":1} },
+			{ "name":"CoC", "type":"postprocess", "vertexShader":"VS", "pixelShader":"PS", "RTV":[ {"name":"CoCMap"}] },
+			{ "name":"Sum", "type":"postprocess", "vertexShader":"VS", "pixelShader":"PS", "UAV":[ {"name":"Sum"}] ,
+				"outputSize":{ "convX":"one" } },
+			{ "name":"Combo", "type":"postprocess", "vertexShader":"VS", "pixelShader":"PS"}
+		]
+    }
+}
+[HLSL]
+#include "../../hlsl/resources_pp.hlsli"
+#include "../../hlsl/yrz.hlsli"
+using namespace Dayo;
+using namespace YRZ;
+
+static float Aperture = 10 * exp2((C_BokehPlus-C_BokehMinus)*5);	//開口量[mm]
+static float Pint = length(C_Pint-CameraPosition);
+static int SampleCount = clamp( lerp(64,256,C_SamplesPlus)*(1-C_SamplesMinus)*SamplesPerFrame, 1,1024);
+
+//ポストプロセス共通VS
+struct VSO {
+	float4 pos : SV_POSITION;
+	float2 uv : TEXCOORD0;
+};
+
+VSO VS( float4 pos : POSITION, float2 uv : TEXCOORD ) {
+	VSO o;
+	o.pos = pos;
+	o.uv = uv;
+	return o;
+}
+
+
+
+//元画面のコピーを取ってミップマップを作成開始するためのパス
+#ifdef YRZ_PASS_MipSource
+float4 PS(VSO vso):SV_TARGET
+{
+	return 	ScreenTexture.Sample(samp, vso.uv);
+}
+#endif
+
+
+//ピント遅延コンピュート
+#ifdef YRZ_PASS_Computer
+[numthreads(1, 1, 1)]
+void CS( uint3 id : SV_DispatchThreadID )
+{
+	//追従目標
+	float fd = Pint;	//測距の結果
+	float zoom = ProjectionMatrix._22;	//画角の変更→ズームレンズ動く→ピント遅延でズレるのを表現
+
+	//現在の値
+	float4 comp = Computer[0];
+	float zoomNow = comp.g;	//現在の追従している画角
+	float fdNow = comp.b;	//今セットされているピント距離
+
+	//再生開始時にリセット
+	if (RealTime < 0.01) {
+		zoomNow = ProjectionMatrix._22;
+		fdNow = fd;
+	}
+
+	float got = lerp(0.01,10,C_Delay);	//99%合焦時間[s]
+	float u = pow(0.01, DRealTime/got);	//使い勝手を考えてリアルタイムに合わせるとする
+	fd = (C_Delay>0) ? lerp(fd,fdNow, u) : fd;
+	zoom = (C_Delay>0) ? lerp(zoom,zoomNow, u) : zoom;
+
+	fd = max(0.1, fd);
+	Computer[0] = float4(fd/zoom*ProjectionMatrix._22, zoom, fd,1);	//rにピント位置、gに画角
+}
+#endif
+
+
+//CoCサイズ取得
+#ifdef YRZ_PASS_CoC
+float4 PS(VSO vso) : SV_TARGET0
+{
+	float z = NormalDepth[vso.pos.xy].w;
+	//何も書かれていない所はてきとうに遠い所、と仮定する
+	float depth = (z==0) ? 1e+5 : z; 
+	depth = length(UVZtoView(vso.uv, depth, CameraFoV, AspectRatio));	//奥行→カメラからの距離に変換
+
+	float focus = Computer[0].r;
+	float d = depth * 80;	//mmに直す
+	float d0 = focus * 80;	
+
+	const float sensorHeight = 24;	//35ミリフルサイズCCDセンサの高さは24ミリ
+	float f = ProjectionMatrix._22 * sensorHeight * 0.5;	//画角から焦点距離を割り出す
+
+	float CoCRadius_mm = Aperture * abs(d-d0)/d * f / (max(1e-3,abs(d0-f)));	//mm単位のCoCの半径(Wikipediaに載ってる公式通り)
+	float CoC = CoCRadius_mm / sensorHeight * Resolution.y;
+	//前ボケの場合はCoCをマイナスにする
+	if (d < d0)
+		CoC = -CoC;
+	//前ボケ抑止モーフ
+	if (C_FrontMinus && CoC<0) {
+		CoC = lerp(CoC,0,saturate(C_FrontMinus));
+	}
+	return float4(CoC,0,0,1);
+}
+#endif
+
+//積分画像生成...並列化するバージョンも書いてみたが結局この通りPixelShaderで安直に書くのが一番速かった
+#ifdef YRZ_PASS_Sum
+
+//pの位置の画素に重みづけした値を返す, rgbに重みづけ輝度,aに重み
+float4 Debu(uint2 pix)
+{
+	float4 p = ScreenTexture[pix];
+	float w = abs(CoCMap[pix]);
+	return float4(p.rgb*w , w);
+}
+
+float4 PS(VSO vso):SV_TARGET0
+{
+	uint W,H;
+	Sum.GetDimensions(W,H);
+	uint y = vso.pos.y;
+
+	/* 元のコード…重みづけをせずにそのままSummed Area Tableを作る
+	Sum[uint2(0,y)] = ScreenTexture[uint2(0,y)];
+	for (int x=1; x<W; x++) {
+		float3 weighted = 
+		Sum[uint2(x,y)] = Sum[uint2(x-1,y)] + ScreenTexture[uint2(x,y)];
+	}
+	*/
+	//abs(CoC)で重みづけをしつつSATを作る。各画素のαに重みを入れる
+	Sum[uint2(0,y)] = Debu(uint2(0,y));
+	for (int x=1; x<W; x++) {
+		Sum[uint2(x,y)] = Sum[uint2(x-1,y)] + Debu(uint2(x,y));
+	}
+
+	discard;
+	return 0;
+}
+#endif
+
+
+
+//畳み込み
+#ifdef YRZ_PASS_Combo
+
+//Δyからx方向の積分幅(左,右)を出す。
+float2 dy2dx(float y)
+{
+	float a;
+	//円形
+	float a1 = sqrt(1-y*y);
+	//六角形
+	float a2 = min((1-abs(y))*2,1)*0.866025;
+	a = lerp(a1,a2,C_Hex);
+	return float2(-a,a);
+}
+
+//線ro+t*rdと円の交差判定(RaySphereを単にfloat2にしただけ)
+bool RayCircle(float2 ro, float2 rd, float R, out float t0, out float t1)
+{
+    t0=t1=0;
+	float B = 2 * dot(rd,ro);
+	float C = dot(ro,ro)-R*R;
+	float det = B*B-4*C;
+	if (det <= 0)
+		return false;
+	t1 = (-B + sqrt(det)) / 2;
+	t0 = (-B - sqrt(det)) / 2;
+	if (t1 < 0)
+		return false;
+	
+	return true;
+}
+
+//夢ならばどれほどよかったでしょう
+//c:注目点のuv, dx:元の積分幅, dy:注目点からのy方向のズレ
+float2 lemon(float2 c, float2 dx, float dy)
+{
+	//レモン係数
+	const float Lemon1 = 1.25;	//後玉から鏡筒の入口までの距離についての係数、数値がデカいほど近い→欠けやすい
+	const float Lemon2 = 1.5;	//絞りと鏡筒の相対サイズについての係数、1が最小。デカいほど絞りに対して鏡筒がデカい→欠けにくい
+
+	//まず、cに対応する中心位置、半径rの円とdyを通る線分の2交点を出す
+	float2 o = (c-0.5)*float2(AspectRatio,1)*Lemon1;	//cから見た鏡筒の中心の位置
+	float t0,t1;
+	float2 ro = float2(-1,dy);
+	float2 rd = float2(1,0);
+	//dxを2交点でクリッピングする
+	if (RayCircle(ro-o, rd, Lemon2, t0,t1)) {
+		float l = -1+t0;
+		float r = -1+t1;
+		return clamp(dx, l, r);
+	}
+	return 0;
+}
+
+//射出瞳を斜めから見た時の形に変形する行列
+//被写体からカメラまでの距離は十分遠いと仮定する
+float2x2 exitPupil(float2 uv)
+{
+	float3 v = UVZtoView(uv, 1, CameraFoV, AspectRatio);	//奥行1の所にある点のビュー座標
+	float3 rd = normalize(lerp(float3(0,0,1), v, C_Lemon));	//uvに対応する点を通るレイ = Z+方向
+	float3x3 TBN = ComputeTBN(rd);	//X+方向とY+方向を生成する
+
+	//射出瞳はこんな恰好に潰れるであろう、という行列
+	return float2x2(
+		TBN._11, TBN._12,
+		TBN._21, TBN._22
+	);
+}
+
+float4 PS(VSO vso) : SV_TARGET0
+{
+	float2 uv = vso.uv;
+	float2 e = 1.0/Resolution;
+	
+	float4 cc = ScreenTexture.Sample(ClampSamp, uv);
+	bool frontBokeh = false; 
+	
+	#if 0
+		//マルチサンプルによって前ボケを優先
+		//パーティクルなど小さい物がモデルの前に来るときにほとんどボケて見えないのをなんとか表現するためのコード
+		float coc = 1e+6;
+		for (int i=0; i<SampleCount; i++) {
+			/*
+			float2 xi = Hash4(uint4(vso.pos.xy, i,Time*1000)).xy;
+			float2 d = CosSin(xi.x*2*PI) * sqrt(xi.y);
+			*/
+			float r = sqrt((i+0.5)/SampleCount);
+			float t = 2 * PI * i * RCP_G;
+			float2 d = CosSin(t) * r * float2(AspectRatio,1);
+
+			float2 sp = uv + d/64 * min(coc,0);	//探索半径は画面の縦幅の1/64とする(1080pの時、直径で約34px)
+			coc = min(coc,CoCMap.Sample(PointSamp, sp).r);
+		}
+	#else
+		float coc = abs(CoCMap.Sample(PointSamp, uv).r);
+		frontBokeh = coc < 0;
+		coc = abs(coc);
+	#endif	
+	
+
+	if (coc < 0.25) {
+		return cc;
+	}
+
+	float anaY = frontBokeh ? 1 : 1+C_Anamorphic;	//後ろボケは縦長
+	float anaX = frontBokeh ? 1+C_Anamorphic : 1;	//前ボケは横長
+	float tw = 0;
+	float4 tc = 0;
+	int S = min(SampleCount, coc*2 * anaY);
+	float2x2 m = exitPupil(uv);
+	float mx = mul(float2(1,0),m);	//射出瞳のx方向の縮小率
+	for (int i=0; i<S; i++) {
+		float dy = ((i+0.5)/S)*2-1;
+		float2 rdy = mul(float2(0,dy),m);	//潰れた射出瞳
+		float2 dx = dy2dx(dy)*mx-rdy.x;
+		dy = rdy.y;
+		dx = lerp(dx,lemon(uv, dx,dy),C_Lemon);	//口径蝕
+		dx *= anaX;	//アナモルフィック効果
+		dy *= anaY;
+		float2 sl = uv + float2(dx[0],dy)*e*coc;
+		float2 sr = uv + float2(dx[1],dy)*e*coc;
+		float4 cl = Sum.Sample(ClampSamp, sl);
+		float4 cr = Sum.Sample(ClampSamp, sr);
+
+		/*
+		//ウェイト(積分した画素数)の計算
+		float w = (dx[1]-dx[0]) * coc;
+		//はみ出した分減らす
+		if (sl.x < 0)
+			w += sl.x * Resolution.x;
+		if (sr.x > 1.0)
+			w -= (sr.x-1) * Resolution.x;
+		*/
+
+		tc += cr-cl;	//tc.aにウェイトの合計が入るのでwなんて捨てて掛かって来いよ状態
+		//tw += w;
+	}
+	
+	//return tw ? tc/tw : cc;
+	return tc.a ? float4(tc.rgb/tc.a, cc.a) : cc;
+}
+#endif
+
+
+
+

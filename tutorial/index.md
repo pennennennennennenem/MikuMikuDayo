@@ -25,4 +25,4 @@ CGアニメーションについての基本的な用語についての説明は
 第三章 [ポストプロセスの作り方](postprocess.md)  
 第四章 [レンダラの作り方](renderer.md)  
 第五章 [補遺](suppli.md)  
-エフェクトリファレンスは[こちら](../docs/html/index.html)
+エフェクトリファレンスは[こちら](https://pennennennennennenem.github.io/MikuMikuDayo/docs/html/)

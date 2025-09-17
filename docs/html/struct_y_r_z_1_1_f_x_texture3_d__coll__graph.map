@@ -1,0 +1,9 @@
+<map id="YRZ::FXTexture3D" name="YRZ::FXTexture3D">
+<area shape="rect" id="Node000001" title="3Dテクスチャ。typeを省略すると型はformatから自動的に設定される" alt="" coords="49,180,182,207"/>
+<area shape="rect" id="Node000002" href="$struct_y_r_z_1_1_f_x_texture.html" title="2Dテクスチャ。typeを省略すると型はformatから自動的に設定される" alt="" coords="57,104,174,131"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="118,146,118,180,113,180,113,146"/>
+<area shape="rect" id="Node000003" href="$struct_y_r_z_1_1_f_x_res.html" title="リソース" alt="" coords="5,5,103,32"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="72,44,110,102,105,105,68,46"/>
+<area shape="rect" id="Node000004" href="$struct_y_r_z_1_1_f_x_size.html" title="リソースや出力先のサイズを表す構造体" alt="" coords="127,5,226,32"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="163,46,125,105,121,102,158,44"/>
+</map>

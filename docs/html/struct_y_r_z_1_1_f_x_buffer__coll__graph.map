@@ -1,7 +1,0 @@
-<map id="YRZ::FXBuffer" name="YRZ::FXBuffer">
-<area shape="rect" id="Node000001" title="1次元のバッファ。構造体の配列として用いることが出来る" alt="" coords="62,104,169,131"/>
-<area shape="rect" id="Node000002" href="$struct_y_r_z_1_1_f_x_res.html" title="リソース" alt="" coords="5,5,103,32"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="72,44,110,102,105,105,68,46"/>
-<area shape="rect" id="Node000003" href="$struct_y_r_z_1_1_f_x_size.html" title="リソースや出力先のサイズを表す構造体" alt="" coords="127,5,226,32"/>
-<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="163,46,125,105,121,102,158,44"/>
-</map>

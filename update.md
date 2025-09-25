@@ -1,5 +1,14 @@
 # 更新履歴
 
+## version 1.01
+
+### MikuMikuDayo.exe
+- FXDebugウィンドウで画像リソースを表示した後にRendererウィンドウのリサイズなどが行われるとクラッシュしていたのを修正
+
+### エフェクト
+- SubayaiのGBuffer,NormalDetphの更新をiSample==0の時のみにした(ジッターが入らなくなった)
+- postprocess/glare/diffusionに「明るさ」「閾値」モーフ追加およびボケ具合がアスペクト比の影響を受けるバグを修正
+
 ## β4→version 1.00
 
 ### MikuMikuDayo.exe
@@ -14,7 +23,7 @@
 - 編集中モデルの物理の更新を直感的にした
 - Snapの設定をBoneウィンドウからconfigに移した
 - 「モデルのキー編集時もカメラのキーを合わせて表示する」項目がconfig.jsonではなくdayoファイル側に保存されていたのを修正
-- 物理演算をconfig.dayoの内容に従って、ジョイントを選択してBullet2.75に近い雰囲気の挙動に出来るようにした
+- 物理演算をconfig.dayoの内容に従って、ジョイントごとにBullet2.75に近い雰囲気の挙動またはBullet3の挙動そのままのいずれかを選択出来るようにした
 - screen.bmpをMatDescから扱えるようにした
 - 追加UV1～4をシェーダ内で扱えるようにした
 - printscreenキーを押したときにscreenshotsフォルダにスクショを撮る機能をon/offできるようにした

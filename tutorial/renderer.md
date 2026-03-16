@@ -535,7 +535,7 @@ void AnyHit(inout Payload payload, Dayo::Attribute attr)
 	uint iface = PrimitiveIndex();
     bool frontface = (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE);
 
-    Patch p = GetPatch(imo, iface, attr.uv, frontface);
+    Patch p = GetPatch(imo, iface, attr.st frontface);
     if (p.m.alpha < RNG.x)
         IgnoreHit();
 }
@@ -557,7 +557,7 @@ void ClosestHit(inout Payload payload, Dayo::Attribute attr)
 {
 	payload.imo = InstanceID();
 	payload.iface = PrimitiveIndex();
-	payload.st = attr.uv;
+	payload.st = attr.st;
 	payload.t = RayTCurrent();
 }
 ```
@@ -625,7 +625,7 @@ void AnyHitGB(inout Payload payload, Dayo::Attribute attr)
 	uint iface = PrimitiveIndex();
     bool frontface = (HitKind() == HIT_KIND_TRIANGLE_FRONT_FACE);
 
-    Patch p = GetPatch(imo, iface, attr.uv, frontface);
+    Patch p = GetPatch(imo, iface, attr.st, frontface);
     if (p.m.alpha < Dayo::AlphaThreshold)
         IgnoreHit();
 }

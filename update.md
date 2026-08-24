@@ -1,5 +1,104 @@
 # 更新履歴
 
+## version 1.30
+
+### MikuMikuDayo.exe
+- モーションの補間法の追加(Catmull-Romスプライン補間)
+- モーションデータのエクスポートにvmdayo形式を定めた
+- 上記に伴い、dayoファイルのバージョンが3になり、キーフレームデータはdayoファイル内にvmdayoファイルをそのまま格納する形式にした
+- カメラのボーン追従時の挙動を修正
+- KeyframeウィンドウにてCtrl+ドラッグで選択範囲のキーの選択状態を反転するようにし、Ctrl+クリックで単一のキーの選択状態の反転が可能になった
+- 出力時に画像ファイルのエンコードを別スレッドでレンダリングと並行して行えるようにし、出力時間を短縮した
+- 外部親ウィンドウで子ボーンとして「子ボーンになれない(移動不可or物理ボーン)ボーンより後のボーン」を指定すると違うボーンが接続されてしまうバグを修正
+- 出力ファイル名が数値で終わっている場合、その数値から連番をスタートするようにした
+- モデルを削除するとorderの内容が崩れるバグを修正
+- デノイザon/offなど、メニューから設定する項目についてもdayoファイルへ保存されるようにした
+- 環境設定ウィンドウにデフォルト設定に戻すボタンを追加
+- 複数ボーン選択時は操作パネルから選択状態のボーン群を一度に動かせるようにした
+- Rendererウィンドウ上で左ドラッグするとボーンの矩形範囲選択が可能になった。Shift+左ドラッグで矩形範囲を追加選択し、Ctrl+左ドラッグで矩形範囲の選択状態を反転する
+- 操作パネルからのボーンの操作では未登録フラグが立っていなかったバグを修正
+- Modelsウィンドウで?ボタンを押すとモデル/エフェクトの説明文表示またはモデルの格納フォルダの表示を選択・実行できるようにした
+- Materialsウィンドウでobject名の表示をModelsウィンドウの表示に合わせた(従来は重複したモデルの場合、区別がつかなかったので)
+- dayoファイル読み込み直後の状態でカメラのボーン追従対象モデルリストが空になってしまうバグを修正
+- .fxdayoファイル内で、controllerNameにファイル名を小文字で書かないとsliderパラメータ・descパラメータがUIに反映されなかったバグを修正
+- MatDescを要求するエフェクトがコンパイルエラー等で読み込み失敗した後、エラーを修正する事で読み込みが成功した場合、MatDescが正しくセットされずMaterialウィンドウを表示するとクラッシュするバグを修正
+- 「更新などによりMatDescを要求するようになったエフェクト」を参照するdayoファイルの読み込みが上手く行かなかったバグを修正
+- FXdebugウィンドウ修正
+  - テクスチャの画像ファイルへのダンプがうまく行かない事があるバグを修正
+  - テクスチャをデバッグ表示したことのあるエフェクトを削除した後、Rendererウィンドウをリサイズするとクラッシュするバグを修正
+  - 材質注釈専用の表示UIを追加
+  - ファンクショナルパス入りのエフェクトについてのパスが最後まで表示できていなかったバグを修正
+  - 3DテクスチャをFXdebugで表示した後にほかのdayoファイルを読み込むとクラッシュするバグを修正
+- Intel OIDNを2.4.1→2.5.0に更新。詳細はIntel OIDNのサイト https://www.openimagedenoise.org/index.html を参照
+- Animationウィンドウ内のaudioのoffsetに対してキーフレームウィンドウ上部の波形データの表示が正しくオフセットされていなかったバグを修正
+
+### PMXLoader
+- モーションの補間法の追加(Catmull-Romスプライン補間)への対応
+- 2軸以上の自由度のある制限付きIKに本家との互換性が無かったので変更。どの程度互換性が改善されたのかはまだ検証の余地あり
+- .vmdayoファイルによるボーン追従キーを含むカメラモーションデータのエクスポートのために以下の変更を加えた
+  - PoseSolver::externalSolverをISolverのメンバとして昇格(CameraSolverとの共通メンバとした)
+  - VMDCamera.parentBoneNameの追加
+  - CameraSolver::Join()でparentID,parentBone,parentBoneNameによるマッチング処理を追加
+
+### よろずDXR
+- デバッグ用途に各PipelineStateObject作成時にPass::nameをコピーするようにした
+- raytracingパスにて、RootConstの設定が誤ってSetGraphicsRoot32BitConstant()を用いて行われていたのをSetComputeRoot32BitConstant()へ修正
+- DXR::SaveTex2DToFileAsyncメソッドの追加 
+  - App::OnCloseQueryイベントハンドラの追加
+
+### よろずFX
+- FXTexCache修正。マテリアルの再読み込みをした場合にテクスチャファイルのタイムスタンプを比較し、キャッシュに格納されたテクスチャが古い場合はそのテクスチャをファイルから読み直すようにした
+- Redeon環境でMatDescテクスチャを使用した際、レンダリング結果にブロックノイズが載る事に対策(未テスト)
+- Expr.ixx pow関数のサポート
+- メッシュクローニングのサポート
+- size.baseに予約語(VERTEXCOUNTなど)を指定した際に正しく値が反映されていなかったバグを修正
+- サイズ指定用の予約語にCLONEDVERTEXCOUNTを追加
+
+### エフェクト
+- メッシュクローニングのサポートに伴い、Dayo::CloneCountバッファが追加された Dayo::CloneCount[imo]でimo番のモデルが何体のクローンになっているか分かる(クローン無し通常表示の場合は1)
+- particle/marimo 追加
+- BDPT更新
+  - メッシュクローニング対応
+  - Categoryパラメータにblackbody追加
+  - Material.emissionの計算法をSubayaiに合わせた
+  - マテリアルパラメータ追加
+    - ColorConstUnclamped
+    - Cutout
+    - ShadowCaster(所謂プレースホルダであり、効果は未実装)
+- Subayai更新
+  - Radeon環境でSubayai使用時にブロックノイズが載る事に対策
+  - マテリアルパラメータ追加
+    - Clearcoat
+    - ClearcoatRoughness
+    - ClearcoatMap, ClearcoatLoops, ClearcoatScale
+    - ClearcoatRoughnessMap, ClearcoatRoughnessLoops, ClearcoatRoughnessScale
+    - ClearcoatNormalMap, ClearcoatNormalLoops, ClearcoatNormalScale
+    - SubAlbedoMap, SubAlbedoLoops, SubAlbedoScale
+    - SubAlbedoOp
+    - SubAlbedoUnclamped
+    - SubAlbedoLinear
+    - Sclera
+    - ColorConstUnclamped
+    - AlbedoLinear
+    - Retroreflection
+  - Specular GIでのレイを反射・屈折・クリアコートそれぞれに対して必要な分だけ生成するようにした(速度は低下するが分散は低減される)
+  - すばやい蓮根でGI-モーフを1.0以上にセットした場合、映り込みにはレイトレの結果ではなくスペキュラ環境マップが入るようにした
+  - すばやい蓮根のAL発光モーフのデフォルト値を0.5にした
+  - すはやい蓮根、すばライトのモーフに説明文を追加
+  - すばライトに「カメラに接続」モーフ追加。カメラの位置から照明できるようになる
+- fog更新
+  - 3Dテクスチャによる濃度・温度ボクセル表示に対応
+  - 流体シミュレーションによってボクセルデータをリアルタイム生成するfluid3D追加
+  - 奥行きの計算時のバグを修正
+- particle/flow用のマテリアル更新, サンプル設定のvmd追加
+- DoF アーティファクトの低減のため、CoCマップを平滑化する処理を追加
+
+### HenDayo.exe
+- search, replace ボタンの配置を変更
+- 上書き保存時、終了時に確認ダイアログを表示するようにした
+
+
+
 ## version 1.20
 
 ### MikuMikuDayo.exe

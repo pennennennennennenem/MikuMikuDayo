@@ -154,7 +154,7 @@ float4 PS(VSO vso) : SV_TARGET
 
 さて、今回はパスの種類`type`として`postprocess`が指定されているので、postprocessパスとしてパスが作られました。postprocessパスは画面の4つの隅の点を作る4つの頂点がよろずDXRから渡されてvertex shaderで処理されます。vertex shaderは頂点の数だけ起動されるので、1フレームにつき4回、この`VS()`は呼び出されるという事になります。
 
-4つの頂点は正規化デバイス座標系と呼ばれる左下隅が画面の(-1,-1),右上隅が(1,1)になるような座標系になっていてそれをセマンティクス付きの出力変数(VSO構造体の中に入っている`pos:SV_POSITION`と`uv:TEXCOORD`です)に返すと、「今処理した頂点は画面上のどこの点に対応するのか」という情報がドライバ側に伝達されます。
+4つの頂点は正規化デバイス座標系と呼ばれる画面の左下隅が(-1,-1),右上隅が(1,1)になるような座標系になっていてそれをセマンティクス付きの出力変数(VSO構造体の中に入っている`pos:SV_POSITION`と`uv:TEXCOORD`です)に返すと、「今処理した頂点は画面上のどこの点に対応するのか」という情報がドライバ側に伝達されます。
 
 ドライバはVertex shaderから処理済みの頂点を受け取ると、「画面上のどの範囲がこのポリゴンで塗りつぶされるのか」という事を決定し、塗りつぶされる範囲の1ピクセル毎にpixel shaderを呼んで画面を作成します。ですから、PS()は画面の画素数と同じ回数だけ呼ばれて実行されます。すごいですね！
 
@@ -191,6 +191,8 @@ float4 PS(VSO vso) : SV_TARGET
 以下のようにコードを変更しました。
 
 ```c
+#define NURI NonUniformResourceIndex
+
 float4 PS(VSO vso) : SV_TARGET
 {
 	float4 I = Dayo::ScreenTexture.Sample(samp, vso.uv);
@@ -204,7 +206,7 @@ float4 PS(VSO vso) : SV_TARGET
     float thru = 0;
 
     if (imo != Dayo::Inai) {
-        int imat = Dayo::Faces[imo][iface];
+        int imat = Dayo::Faces[NURI(imo)][iface];
         thru = (imo==0 && imat==0);
     }
 
@@ -249,13 +251,15 @@ W = V[0] + s*(V[1]-V[0]) + t*(V[2]-V[0]);
 次に、
 ```c
     if (imo != Dayo::Inai) {
-        int imat = Dayo::Faces[imo][iface];
+        int imat = Dayo::Faces[NURI(imo)][iface];
         thru = (imo==0 && imat==0);
     }
 ```
 として、GBuffer1から取得したモデル番号、面番号から材質番号を取得します。imoに`Dayo::Inai`が書き込まれている場合は、GBuffer1に何も書かれていない、モデルの描画によって埋められたピクセルではない事を示しているので、imoがそれ以外の値の時だけDayo::Facesにアクセスするようにします。`Dayo::Inai`は(uint)0xFFFFFFFF = -1と定義されているので、普通に-1と書いても構いません。
 
-モデル番号・材質番号の特定ができたら、thruという変数に「モデル番号が0かつ材質番号が0ならば1、そうでなければ0」をセットし、ポストプロセスの効果をスルーするフラグとして使います。
+ここで、`NURI(=NonUniformResourceIndex)`というマクロについて説明しときます。ちょっと面倒な話なので真似して書く分にはこの段落だけすっ飛ばして読んで頂いて構わないんですが、`Dayo::Faces`は各モデルを構成する面に割り当てられたマテリアル番号を格納した物で、`Dayo::Faces[モデル番号][面番号]`という形式でアクセスできますが、Facesという配列リソースはbindless resourceとして定義されています。DirectX12の仕様上の欠陥なんですが、bindless resourceにアクセスする場合は、原則として添え字はuniform変数(定数やコンスタントバッファ由来の変数など1フレームの間、全ピクセルについて全く値が変わらない事が保証されている変数)にする必要があります。そうで無い場合は`NURI`を付けることで「この変数はuniform変数ではありません」という断り書きをせねばならんそうです。GeForce環境では付けても付けなくても見た目上の変化はないのですが、Radeonなどではリソースへのアクセスが失敗して描画結果にノイズが出るなど不具合が起こります。今回の場合は、`imo`はGBufferから読んで決めていますから、各ピクセルで値の変わる、uniformではない変数であると分かります。そのため、`Dayo::Faces`の添え字に指定するためには`NURI`を付ける必要があるのです。
+
+さて、モデル番号・材質番号の特定ができたら、thruという変数に「モデル番号が0かつ材質番号が0ならば1、そうでなければ0」をセットし、ポストプロセスの効果をスルーするフラグとして使います。
 
 これで特定のモデルの特定の材質だけスルーするよう作り替えられました、めでたしめでたし。
 
@@ -366,7 +370,7 @@ float4 PS(VSO vso) : SV_TARGET
 	float thru = 0;
 
 	if (imo != Dayo::Inai) {
-		int imat = Dayo::Faces[imo][iface];
+		int imat = Dayo::Faces[NURI(imo)][iface];
 		PPTutorialValue ppv = GetPPTutorialValue(imo,imat);
 		thru = ppv.Thru;
 	}

@@ -1,5 +1,50 @@
 # 更新履歴
 
+## TODO
+
+- dayoファイルを作った後にモデルにモーフが追加された場合、0フレームにもキーの打たれていない状態になる？
+- MatDescTemplateで2Dテクスチャが定義されていない場合、3Dテクスチャが正しく参照されない？
+- sample/Ocean追加
+- MCPクライアント例としてKaipopo追加
+
+## version 1.40
+
+### MikuMikuDayo.exe
+- MCPクライアントと接続できるよう、標準入力から入力を得られるようにした(まだコマンドはほぼ未実装)
+- FreeType対応により絵文字の表示が可能になった
+- ボタンにアイコンを付記できるようになった(設定でラベルのみ・アイコンのみ・両方表示の切り替え可能)
+- ポストプロセスの実行順のおすすめ設定ボタンが追加された
+- ModelsウィンドウのIKボーンとチェックボックスを一覧できるようにレイアウト変更
+- Expressionウィンドウの表情モーフを一覧できるようにレイアウト変更、全表情モーフ登録・初期化ボタン追加
+- 英語モードでも一部のツールチップが日本語のまま表示されていたバグを修正
+- ひこうきインパルス.pmx、プロペラを床(グループ16)に対し非衝突設定として設定した
+- FXDebugウィンドウでmipmap付きテクスチャの表示時に、mipレベルの指定をできるようにした
+- DualQuaternionスキニング使用時にtangentを変換しわすれていたのを修正
+- 借り物リスト、1つのモデルに対して複数のURLファイルがある場合、全部読み込んで親作品リストに追加するように修正
+- Keyframesウィンドウにツールボックス追加。ツール群として以下を追加
+  - 位置・角度補正
+  - 速度調整
+  - 表情大きさ補正
+  - ランダムまばたき
+  - 音圧からモーフを生成するMorphEQ
+  - 音圧からリップを生成するauto lip maker
+- Keyframeウィンドウの表情モーフキー選択ボタンにポップアップメニューを追加し、全選択だけでなく目・口・まゆ・その他モーフのみ選択もできるようにした
+
+### よろずDXR
+- RTV,UAV,DSVに指定されたリソースのmipSliceが実際に指定できるMipLevelを超えている場合に、例外を出さず指定できる最大値に制限するようにした
+
+### よろずFX
+- ポストプロセスの優先順のヒントを与えるFXTech::stage, FXTech::subHintOrderの追加。FX::HintOrder()で優先順位の整数値を得られる
+- FXPass.RTV[].mipSlice, FXPass.UAV[].mipSlice, FXPass.DSV.mipSlice の指定がある場合、outputSizeのデフォルト値をそれらに反映するようにした
+
+### エフェクト
+- postprocess/lensflare/ikLensGhost追加 ikeno氏原作のエフェクトを移植しました
+- postprocess/TAA追加
+
+### PMXLoader
+- 床剛体がグループ16として設定されておらず、MikuMikuDayo上で"floor collision"を無効にしない限り衝突が発生していたのを修正。
+
+
 ## version 1.30
 
 ### MikuMikuDayo.exe
@@ -28,9 +73,7 @@
   - テクスチャをデバッグ表示したことのあるエフェクトを削除した後、Rendererウィンドウをリサイズするとクラッシュするバグを修正
   - 材質注釈専用の表示UIを追加
   - ファンクショナルパス入りのエフェクトについてのパスが最後まで表示できていなかったバグを修正
-  - 3DテクスチャをFXdebugで表示した後にほかのdayoファイルを読み込むとクラッシュするバグを修正
 - Intel OIDNを2.4.1→2.5.0に更新。詳細はIntel OIDNのサイト https://www.openimagedenoise.org/index.html を参照
-- Animationウィンドウ内のaudioのoffsetに対してキーフレームウィンドウ上部の波形データの表示が正しくオフセットされていなかったバグを修正
 
 ### PMXLoader
 - モーションの補間法の追加(Catmull-Romスプライン補間)への対応
@@ -41,10 +84,8 @@
   - CameraSolver::Join()でparentID,parentBone,parentBoneNameによるマッチング処理を追加
 
 ### よろずDXR
-- デバッグ用途に各PipelineStateObject作成時にPass::nameをコピーするようにした
-- raytracingパスにて、RootConstの設定が誤ってSetGraphicsRoot32BitConstant()を用いて行われていたのをSetComputeRoot32BitConstant()へ修正
 - DXR::SaveTex2DToFileAsyncメソッドの追加 
-  - App::OnCloseQueryイベントハンドラの追加
+- App::OnCloseQueryイベントハンドラの追加
 
 ### よろずFX
 - FXTexCache修正。マテリアルの再読み込みをした場合にテクスチャファイルのタイムスタンプを比較し、キャッシュに格納されたテクスチャが古い場合はそのテクスチャをファイルから読み直すようにした
@@ -55,43 +96,32 @@
 - サイズ指定用の予約語にCLONEDVERTEXCOUNTを追加
 
 ### エフェクト
-- メッシュクローニングのサポートに伴い、Dayo::CloneCountバッファが追加された Dayo::CloneCount[imo]でimo番のモデルが何体のクローンになっているか分かる(クローン無し通常表示の場合は1)
 - particle/marimo 追加
-- BDPT更新
-  - メッシュクローニング対応
-  - Categoryパラメータにblackbody追加
-  - Material.emissionの計算法をSubayaiに合わせた
-  - マテリアルパラメータ追加
-    - ColorConstUnclamped
-    - Cutout
-    - ShadowCaster(所謂プレースホルダであり、効果は未実装)
-- Subayai更新
-  - Radeon環境でSubayai使用時にブロックノイズが載る事に対策
-  - マテリアルパラメータ追加
-    - Clearcoat
-    - ClearcoatRoughness
-    - ClearcoatMap, ClearcoatLoops, ClearcoatScale
-    - ClearcoatRoughnessMap, ClearcoatRoughnessLoops, ClearcoatRoughnessScale
-    - ClearcoatNormalMap, ClearcoatNormalLoops, ClearcoatNormalScale
-    - SubAlbedoMap, SubAlbedoLoops, SubAlbedoScale
-    - SubAlbedoOp
-    - SubAlbedoUnclamped
-    - SubAlbedoLinear
-    - Sclera
-    - ColorConstUnclamped
-    - AlbedoLinear
-    - Retroreflection
-  - Specular GIでのレイを反射・屈折・クリアコートそれぞれに対して必要な分だけ生成するようにした(速度は低下するが分散は低減される)
-  - すばやい蓮根でGI-モーフを1.0以上にセットした場合、映り込みにはレイトレの結果ではなくスペキュラ環境マップが入るようにした
-  - すばやい蓮根のAL発光モーフのデフォルト値を0.5にした
-  - すはやい蓮根、すばライトのモーフに説明文を追加
-  - すばライトに「カメラに接続」モーフ追加。カメラの位置から照明できるようになる
+- Radeon環境でSubayai使用時にブロックノイズが載る事に対策(未テスト)
+- Subayaiに以下のマテリアルパラメータ追加
+  - Clearcoat
+  - ClearcoatRoughness
+  - ClearcoatMap, ClearcoatLoops, ClearcoatScale
+  - ClearcoatRoughnessMap, ClearcoatRoughnessLoops, ClearcoatRoughnessScale
+  - ClearcoatNormalMap, ClearcoatNormalLoops, ClearcoatNormalScale
+  - SubAlbedoMap, SubAlbedoLoops, SubAlbedoScale
+  - SubAlbedoOp
+  - SubAlbedoUnclamped
+  - SubAlbedoLinear
+  - Sclera
+  - ColorConstUnclamped
+  - AlbedoLinear
+  - Retroreflection
+- Subayai specular GIでのレイを反射・屈折・クリアコートそれぞれに対して必要な分だけ生成するようにした(速度は低下するが分散は低減される)
+- すばやい蓮根でGI-モーフを1.0以上にセットした場合、映り込みにはレイトレの結果ではなくスペキュラ環境マップが入るようにした
+- すばやい蓮根のAL発光モーフのデフォルト値を0.5にした
+- すはやい蓮根、すばライトのモーフに説明文を追加
+- すばライトに「カメラに接続」モーフ追加。カメラの位置から照明できるようになる
+- DoF アーティファクトの低減のため、CoCマップを平滑化する処理を追加
+- メッシュクローニングのサポートに伴い、Dayo::CloneCountバッファが追加された Dayo::CloneCount[imo]でimo番のモデルが何体のクローンになっているか分かる(クローン無し通常表示の場合は1)
 - fog更新
   - 3Dテクスチャによる濃度・温度ボクセル表示に対応
   - 流体シミュレーションによってボクセルデータをリアルタイム生成するfluid3D追加
-  - 奥行きの計算時のバグを修正
-- particle/flow用のマテリアル更新, サンプル設定のvmd追加
-- DoF アーティファクトの低減のため、CoCマップを平滑化する処理を追加
 
 ### HenDayo.exe
 - search, replace ボタンの配置を変更

@@ -216,11 +216,9 @@ Keyframeウィンドウでボーンを選択できる他、ボーン選択モー
 
 ラジオボタンでキーのどの要素についての補間曲線を操作するのか選択できます。`All`を選択すると全ての要素を一括して設定出来ます
 
-`spline` ツリーの下に、Catmull-Romスプライン補間により曲線的に補間する軸を設定するためのチェックボックスがあります。チェックボックスがオフの軸は線形補間により補間されます。
-
 - `register` 操作結果をキーフレームに登録します(本家MMDとは違い、registerを押さないと編集フレームを切り替える際に操作内容は破棄されますのでご注意ください)
-- `copy` 編集中の補間曲線・補間法を補間曲線用コピーバッファにコピーします
-- `paste` 補間曲線・補間法をペーストします
+- `copy` 編集中の補間曲線を補間曲線用コピーバッファにコピーします
+- `paste` 補間曲線をペーストします
 - `init` 補間曲線を直線に初期化します
 
 #### Animationウィンドウ
@@ -357,6 +355,7 @@ VisualStudio2022でのビルドを念頭にしていますが、VisualStudio2026
 - [ImGuizmo](https://github.com/CedricGuillemet/ImGuizmo)
 - [Cereal](https://uscilab.github.io/cereal/)
 - [Jsonnet](https://jsonnet.org/)
+- [FreeType](https://freetype.org/)
 
 DirectX TexはNuGetでプロジェクトに追加するのが簡単でしょう。`プロジェクト`→`NuGetパッケージの管理`で出来ます。
 
@@ -369,6 +368,8 @@ OIDNについては上記リンクよりダウンロードしたoidn-(バージ�
 Cereal, ImGui, ImGuizmoのプロジェクトへの追加方法は各ドキュメントにある通り、プロジェクトのソースファイルに追加するだけです。ImGuiのbackendsにはimgui_impl_dx12とimgui_impl_win32を使ってください
 
 Jsonnetはvcpkgでインストールすると良いでしょう。[こちら](https://github.com/google/jsonnet/tree/master?tab=readme-ov-file#packages)に詳しく書いてあります
+
+FreeTypeもvcpkgでインストールできます`vcpkg install freetype:x64-windows`としてインストールしてください。
 
 
 ## 付属のツールについて

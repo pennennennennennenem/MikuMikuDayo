@@ -7,6 +7,11 @@
 - sample/Ocean追加
 - MCPクライアント例としてKaipopo追加
 
+## version 1.50 (WIP)
+- particle/water追加
+- TLASをデフォーマから参照できるようにしたのでレイトレーシングをデフォーマから使えるようになった
+
+
 ## version 1.40
 
 ### MikuMikuDayo.exe

@@ -13,6 +13,9 @@
 - Materialsウィンドウで複数の材質注釈をセットした場合に、エラーを1度にまとめて表示するようにした
 - エクスプローラからMaterialsウィンドウへのドロップによる材質注釈ファイルの読み込みに対応
 
+### よろずFX
+- StringToD3D12ColorWriteEnableに"NONE"追加。blendDesc.renderTargetWriteMaskに指定するとカラーバッファへの書き込みを一切しないようにできる。
+
 ## version 1.40
 
 ### MikuMikuDayo.exe

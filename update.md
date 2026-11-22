@@ -8,13 +8,19 @@
 - MCPクライアント例としてKaipopo追加
 
 ## version 1.50 (WIP)
+
+### MikuMikuDayo.exe
 - particle/water追加
 - TLASをデフォーマから参照できるようにしたのでレイトレーシングをデフォーマから使えるようになった
-- Materialsウィンドウで複数の材質注釈をセットした場合に、エラーを1度にまとめて表示するようにした
-- エクスプローラからMaterialsウィンドウへのドロップによる材質注釈ファイルの読み込みに対応
+- Materialsウィンドウ更新
+  - Materialsウィンドウで複数のエラーを含む材質注釈をセットした場合に、エラーを1度にまとめて表示するようにした
+  - エクスプローラからMaterialsウィンドウへのドロップによる材質注釈ファイル(*.txt,*.json)の読み込みに対応
+  - MaterialsウィンドウでAlt+クリックで選択すると同一モデル内で同一のマテリアルファイルが割り当てられた材質を一括選択するようにした
 
 ### よろずFX
 - StringToD3D12ColorWriteEnableに"NONE"追加。blendDesc.renderTargetWriteMaskに指定するとカラーバッファへの書き込みを一切しないようにできる。
+
+
 
 ## version 1.40
 

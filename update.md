@@ -11,6 +11,15 @@
 
 ### MikuMikuDayo.exe
 - particle/water追加
+
+
+## version 1.41
+
+### MikuMikuDayo.exe
+
+- en-usロケールに対応していないフォントがシステムにインストールされていると起動に失敗するバグを修正
+- config.jsonから物理エンジン互換性についての設定が抜けていたのを修正
+- Boneウィンドウで物理キーをoffにすると物理状態がリセットされた位置・姿勢になっていたのを修正
 - TLASをデフォーマから参照できるようにしたのでレイトレーシングをデフォーマから使えるようになった
 - Materialsウィンドウ更新
   - Materialsウィンドウで複数のエラーを含む材質注釈をセットした場合に、エラーを1度にまとめて表示するようにした
@@ -20,6 +29,8 @@
 ### よろずFX
 - StringToD3D12ColorWriteEnableに"NONE"追加。blendDesc.renderTargetWriteMaskに指定するとカラーバッファへの書き込みを一切しないようにできる。
 
+### エフェクト
+- postprocess/SVGFが誤って含まれていたのを削除
 
 
 ## version 1.40
